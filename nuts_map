@@ -1,0 +1,12 @@
+# Installation des librairies nécessaires
+import folium
+from folium import plugins
+from folium.features import GeoJsonPopup, GeoJsonTooltip
+from folium import FeatureGroup
+from folium import LayerControl
+import pandas as pd
+import geopandas as gpd
+
+# Création de la carte de base
+nutsmap = folium.Map(location=[43.610769,3.876716], zoom_start=10, tiles='Stamen Terrain')
+nutsmap
