@@ -6,7 +6,108 @@ from folium import FeatureGroup
 from folium import LayerControl
 import pandas as pd
 import geopandas as gpd
+import json
+import collections
+import matplotlib.pyplot as plt
 
-# Création de la carte de base
-nutsmap = folium.Map(location=[43.610769,3.876716], zoom_start=10, tiles='Stamen Terrain')
-nutsmap
+# Ouverture de la couche pays
+pays = "/work/world-administrative-boundaries.shp"
+produit = "/work/test_produits.geojson"
+
+produit_json = json.load(open(produit))
+
+produit_json.keys()
+
+produit_json["features"][0].keys()
+
+produit_json["features"][0]['properties']
+
+# pour la couche pays
+pays_prod = "/work/jointure_pays_prod.geojson"
+pp_geo = json.load(open(pays_prod))
+
+pp_geo.keys()
+
+pp_geo["type"]
+
+len(pp_geo["features"])
+
+pp_geo["features"][0].keys()
+
+pp_geo["features"][0]['properties']
+
+nutsmap2 = folium.Map(location=[43.610769,3.876716], zoom_start=10, tiles='OpenStreetMap')
+folium.Choropleth(geo_data = pp_geo).add_to(nutsmap2)
+nutsmap2
+
+def count_products_by_score(pp_geo):
+    scores = {}
+    data_pp = gpd.read_file(pp_geo)
+
+    for row in data_pp.iterrows():
+        score = row[1]['Score']  # Supposons que le score se trouve dans la colonne 'score'
+        if score in scores:
+            scores[score] += 1
+        else:
+            scores[score] = 1
+
+    return scores
+ 
+filename = '/work/jointure_pays_prod.geojson'
+product_scores = count_products_by_score(filename)
+
+for score, count in product_scores.items():
+    print(f"Score {score}: {count} produit(s)")
+    
+import matplotlib.pyplot as plt
+
+def create_icon(product_scores):
+    scores = list(product_scores.keys())
+    counts = list(product_scores.values())
+
+    # Définition des couleurs pour chaque score
+    colors = ['#FFC02C', '#9B9B9B', '#B55C00', '#2A2A2A']
+
+    fig, ax = plt.subplots()
+
+    # Création de la barre divisée en 4 parties
+    bar_width = 1.0
+    bar_height = 0.2
+    bar_y = 0.5
+
+    # Calcul de la longueur de chaque partie en fonction du nombre de produits par score
+    total_count = sum(counts)
+    part_lengths = [count / total_count * bar_width for count in counts]
+
+    # Affichage des parties de la barre avec les couleurs correspondantes
+    x_start = 0.0
+    for i, length in enumerate(part_lengths):
+        rect = plt.Rectangle((x_start, bar_y - bar_height/2), length, bar_height, facecolor=colors[i])
+        ax.add_patch(rect)
+        x_start += length
+
+    # Personnalisation de l'icône
+    ax.set_xlim(0, bar_width)
+    ax.set_ylim(0, 1)
+    ax.set_axis_off()
+
+    # Affichage des scores au-dessus de chaque partie de la barre
+    for i, score in enumerate(scores):
+        x = sum(part_lengths[:i]) + part_lengths[i] / 2
+        ax.text(x, bar_y + bar_height, score, ha='center', va='bottom', fontsize=10)
+
+    # Affichage des valeurs de comptage au-dessous de chaque partie de la barre
+    for i, count in enumerate(counts):
+        x = sum(part_lengths[:i]) + part_lengths[i] / 2
+        ax.text(x, bar_y - bar_height, str(count), ha='center', va='top', fontsize=10)
+
+    # Réglages d'apparence
+    fig.tight_layout()
+
+    # Affichage de l'icône
+    plt.show()
+
+
+# Exemple d'utilisation avec des scores réels et des couleurs correspondantes
+product_scores = {'Score 1': 18, 'Score 2': 10, 'Score 3': 5, 'Score 4': 3}
+create_icon(product_scores)
